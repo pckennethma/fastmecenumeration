@@ -29,7 +29,7 @@ the transformational characterization by Chickering (1995).
 consecutive DAGs have structural Hamming distance less or equal than three.
 - `enumerate_meek` enumerates all DAGs of an input graph based on the rules
 proposed by Meek (1995).
-- `cpdag_enumerate` (for CPDAGs), and `pdag_enumerate` (for PDAGs) enumerate
+- `cpdag_enumerate` (for CPDAGs) and `pdag_enumerate` (for PDAGs) enumerate
 all DAGs with linear-time delay.
 
 To benchmark all algorithms against each other in every setting, run
