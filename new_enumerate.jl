@@ -1,6 +1,5 @@
 using Graphs
-
-@isdefined(Measurement) || include("utils.jl")
+include("utils.jl")
 
 mutable struct CPDAGHelper
     A::Vector{Set{Int64}}
@@ -75,19 +74,34 @@ function construct_DAG(G, H)
     return D
 end
 
-function rec_cpdag_enum(G, C, H)
+function rec_cpdag_enum(G, C, H, output_folder="instances/dag/")
+    if H.count >= 1024
+        return
+    end
+
     if H.i > nv(C)
         D = construct_DAG(G, H)
-        # do something, e.g. print
+        count = H.count
+        if output_folder == "instances/dag/"
+            f = joinpath(@__DIR__, "/instances/dag/", "dag-$count.gr")
+        else
+            f = joinpath(output_folder, "dag-$count.gr")
+        end
+        isfile(f) && return
+        writegraph(D, f, true)
         addmeasurement!(H.m)
         H.count += 1
+        return
+    end
+
+    if H.count >= 1024
         return
     end
 
     S = H.A[H.maxA]
     v = first(S)
     cpdag_setv(C, H, v)
-    rec_cpdag_enum(G, C, H)
+    rec_cpdag_enum(G, C, H, output_folder)
     cpdag_resetv(C, H, v)
 
     reachable = Set{Int64}()
@@ -96,7 +110,7 @@ function rec_cpdag_enum(G, C, H)
     for x in reachable
         x == v && continue
         cpdag_setv(C, H, x)
-        rec_cpdag_enum(G, C, H)
+        rec_cpdag_enum(G, C, H, output_folder)
         cpdag_resetv(C, H, x)
     end
 end
@@ -111,7 +125,7 @@ by making use of the Maximum Cardinality Search (MCS) algorithm.
 - Theorem 3 in Section 3 (Enumerating AMOs with Linear Delay).
 - Algorithm 5 (EnumMCS) in Appendix B.1.
 """
-function cpdag_enumerate(G, m)
+function cpdag_enumerate(G, m, output_folder="instances/dag/")
     # G is CPDAG, C is graph containing only the chordal components, H is helper
     n = nv(G)
 
@@ -146,7 +160,7 @@ function cpdag_enumerate(G, m)
     H = CPDAGHelper(A, invA, tau, comp, maxA, i, count, m)
 
 
-    rec_cpdag_enum(G, C, H)
+    rec_cpdag_enum(G, C, H, output_folder)
 
     return H.count
 end

@@ -1,7 +1,8 @@
 using Graphs
 
+include("utils.jl")
+
 @isdefined(extend) || include("extend.jl")
-@isdefined(Measurement) || include("utils.jl")
 
 function edgelist(D)
     el = Vector{Edge}()
@@ -23,14 +24,17 @@ function covered_edges(D, undirected)
     return ce
 end
 
-function output(D, vis, m)
+function output(D, vis, m, output_folder="")
     push!(vis, edgelist(D))
-    # do something, e.g. print
+    index = length(vis)
+    if output_folder != ""
+        writegraph(D, joinpath(output_folder, "dag-$index.gr"), false)
+    end
     addmeasurement!(m)
 end
 
-function rec_chickering_enumerate(D, vis, turnededges, undirected, i, m)
-    output(D, vis, m)
+function rec_chickering_enumerate(D, vis, turnededges, undirected, i, m, output_folder="")
+    output(D, vis, m, output_folder)
     C = covered_edges(D, undirected)
     for e in C
         (e in turnededges) && continue
@@ -41,7 +45,7 @@ function rec_chickering_enumerate(D, vis, turnededges, undirected, i, m)
         push!(turnededges, Edge(x,y))
         push!(turnededges, Edge(y,x))
         if !(edgelist(D) in vis)
-            rec_chickering_enumerate(D, vis, turnededges, undirected, i+1, m)
+            rec_chickering_enumerate(D, vis, turnededges, undirected, i+1, m, output_folder)
         end
         rem_edge!(D, y, x)
         add_edge!(D, x, y)
@@ -61,7 +65,7 @@ reversals starting from an arbitrary DAG in the MEC of `G`.
 - Algorithm 3 (CHICKERING-ENUM) in Appendix A.2 (Enumerating Markov
 Equivalent DAGs based on Chickering's Transformational Characterization).
 """
-function chickering_enumerate(G, m)
+function chickering_enumerate(G, m, output_folder="")
     undirected = Set{Edge}()
     for e in edges(G)
         x = src(e)
@@ -73,6 +77,6 @@ function chickering_enumerate(G, m)
     vis = Set{Vector{Edge}}()
     turnededges = Set{Edge}()
     m.last = time_ns()
-    rec_chickering_enumerate(D, vis, turnededges, undirected, 0, m)
+    rec_chickering_enumerate(D, vis, turnededges, undirected, 0, m, output_folder)
     return length(vis)
 end

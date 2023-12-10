@@ -29,7 +29,7 @@ Run the experiments. Parameters:
 - verbose: `true` if every single delay should be saved, `false` if only min, max, mean and stddev should be saved
 """
 function run_eval(dir="instances/", outf="out.csv", undir=true, itype=CC, plot=false, timeout=60.0, verbose=true)
-    algorithms = [pdag_enumerate, enumerate_meek, dfs_enumerate, chickering_enumerate]
+    algorithms = [enumerate_meek, dfs_enumerate, chickering_enumerate]
     outfile = string(@__DIR__, "/results/", outf)
     fexists = isfile(outfile)
 
@@ -70,6 +70,7 @@ function run_eval(dir="instances/", outf="out.csv", undir=true, itype=CC, plot=f
                             G_ = copy(G)
                             res = algo(G_, measure, params...)
                             results[string(algo, "-", i)] = res
+                            @info "# of DAGs: $res"
                         catch err
                             if !isa(err, TimeoutException)
                                 @error err

@@ -44,9 +44,9 @@ if ARGS[1] == "cc"
         end
     end
 elseif ARGS[1] == "cpdag"
-    for rep = 1:10
-        for n in [16, 32, 64, 128, 256, 512, 1024]
-            for d in [3, round(Int, log2(n))]
+    for rep = 1:2
+        for n in [2]
+            for d in [1]
                 m = d*n
                 for sf in [true, false]
                     s = sf ? "ba" : "er"

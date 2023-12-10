@@ -3,6 +3,7 @@ using Graphs
 @isdefined(isextendable) || include("extend.jl")
 @isdefined(meek!) || include("meek.jl")
 @isdefined(Measurement) || include("utils.jl")
+@isdefined(writegraph) || include("utils.jl")
 
 mutable struct PDAGHelper
     parents::Vector{Set{Int64}}
@@ -87,10 +88,19 @@ function construct_DAG(G, H)
     return D
 end
 
-function rec_pdag_enum(G, C, H)
+function rec_pdag_enum(G, C, H, output_folder="")
+    if H.count >= 1024
+        @warn "More than 1024 DAGs found, aborting."
+        return
+    end
+
     if H.i > nv(G)
         D = construct_DAG(G, H)
         # do something, e.g. print
+        index = H.count
+        if output_folder != ""
+            writegraph(D, joinpath(output_folder, "dag-$index.gr"), false)
+        end
         addmeasurement!(H.m)
         H.count += 1
         return
@@ -99,7 +109,7 @@ function rec_pdag_enum(G, C, H)
     S = H.A[H.maxA]
     v = first(S)
     pdag_setv(C, H, v)
-    rec_pdag_enum(G, C, H)
+    rec_pdag_enum(G, C, H, output_folder)
     pdag_resetv(C, H, v)
 
     reachable = Set{Int64}()
@@ -108,13 +118,13 @@ function rec_pdag_enum(G, C, H)
     for x in reachable
         x == v && continue
         pdag_setv(C, H, x)
-        rec_pdag_enum(G, C, H)
+        rec_pdag_enum(G, C, H, output_folder)
         pdag_resetv(C, H, x)
     end
 end
 
 """
-    pdag_enumerate(G, m)
+    pdag_enumerate(G, m, output_folder="")
 
 Enumerate all Markov equivalent DAGs of a PDAG `G` with linear-time delay
 by first converting `G` into an MPDAG and then making use of the Maximum
@@ -125,7 +135,7 @@ only vertices with no univisted parent are chosen.
 - Theorem 5 in Section 4 (PDAGs and MPDAGs).
 - Algorithm 7 (based on MCS-ENUM for buckets) in Appendix B.2.
 """
-function pdag_enumerate(G, m)
+function pdag_enumerate(G, m, output_folder="")
     # G is orig graph (PDAG), B is the graph containing only buckets, H is helper
     n = nv(G)
 
@@ -190,7 +200,7 @@ function pdag_enumerate(G, m)
     H = PDAGHelper(parents, A, invA, tau, indeg, comp, maxA, i, count, m)
 
 
-    rec_pdag_enum(G, C, H)
+    rec_pdag_enum(G, C, H, output_folder)
 
     return H.count
 end

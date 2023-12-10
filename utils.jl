@@ -58,6 +58,8 @@ function readgraph(file = stdin, undirected = false)
         add_edge!(G, a, b)
         undirected && add_edge!(G, b, a)
     end
+    nedge = ne(G)
+    @info "Read graph with $n vertices and $nedge edges"
     if file != stdin
         close(infile)
     end
@@ -169,4 +171,26 @@ function addmeasurement!(m)
 
     nanosec2sec(ts - m.start) >= m.timeout && throw(TimeoutException())
     m.last = time_ns()
+end
+
+
+"""
+    writegraph(G, f, undir=false)
+
+Save the graph `G` to the file `f`.
+Set `undir` to `true` if the graph is fully undirected and edges should not be encoded as two arcs.
+"""
+function writegraph(G, f, undir=false)
+    n = nv(G)
+    m = undir ? convert(Int, ne(G) / 2) : ne(G)
+    done = Set()
+    open(f, "w") do io
+        write(io, "$n $m\n\n")
+        for u = 1:n, v = 1:n
+            if has_edge(G, u, v) && !((u, v) in done)
+                write(io, "$u $v\n")
+                undir && push!(done, (v, u))
+            end
+        end
+    end
 end
